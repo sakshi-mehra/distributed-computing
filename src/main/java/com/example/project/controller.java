@@ -38,6 +38,6 @@ public class controller {
     public String add(Data data) {
         System.out.println(data.getFirstName());
         System.out.println(data.getLastName());
-        return "";
+        return "addSuccess";
     }
 }
