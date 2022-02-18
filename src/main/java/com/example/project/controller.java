@@ -36,8 +36,14 @@ public class controller {
 
     @PostMapping("/add")
     public String add(Data data) {
-        System.out.println(data.getFirstName());
-        System.out.println(data.getLastName());
-        return "";
+        try{
+            dataService.addUser(data);
+            System.out.println(data.getFirstName());
+            System.out.println(data.getLastName());
+            return "addSuccess";
+        }
+        catch(Exception e){
+            return "addFailed";
+        }
     }
 }

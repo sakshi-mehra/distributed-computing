@@ -4,7 +4,10 @@ import org.springframework.data.repository.CrudRepository;
 
 import com.example.project.entity.Data;
 
+import java.util.List;
+
 public interface DataDao extends CrudRepository<Data, Long> {
 
-    Data findUserLoginByFirstName(String username);
+    List<Data> findAll();
 }
+

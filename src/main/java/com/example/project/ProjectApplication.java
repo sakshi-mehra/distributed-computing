@@ -21,8 +21,8 @@ public class ProjectApplication {
 
 	public static void main(String[] args) {
 		ApplicationContext ctx = SpringApplication.run(ProjectApplication.class, args);
-		IDataService dataService =
-				ctx.getBean("dataService", IDataService.class);
+		/*IDataService dataService =
+				ctx.getBean("dataService", IDataService.class);*/
 		//DataModel loginModel =new DataModel();
 //		loginModel.setPassword("dbase123");
 //		loginModel.setUserName("bharat0126");

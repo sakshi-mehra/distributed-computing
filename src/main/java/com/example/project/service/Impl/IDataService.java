@@ -9,7 +9,7 @@ public interface IDataService {
 
 	public List<Data> getAllUsers();
 
-	/*public void save(UserLogin person);*/
+//	/*public void save(UserLogin person);*/
 
-    public DataModel getUser(DataModel loginModel);
+    public void addUser(Data loginModel);
 }

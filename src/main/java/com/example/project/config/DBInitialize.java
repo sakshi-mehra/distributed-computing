@@ -28,11 +28,11 @@ public class DBInitialize {
                             "id INTEGER Primary key, " +
                             "firstName varchar(30) not null, " +
                             "lastName varchar(30) not null)");
-            statement.executeUpdate(
-                    "INSERT INTO Data " +
-                            "(firstName,lastName) " +
-                            "VALUES " + "('Bharat','Verma')"
-            );
+//            statement.executeUpdate(
+//                    "INSERT INTO Data " +
+//                            "(firstName,lastName) " +
+//                            "VALUES " + "('Bharat','Verma')"
+//            );
             statement.close();
             connection.close();
         }
