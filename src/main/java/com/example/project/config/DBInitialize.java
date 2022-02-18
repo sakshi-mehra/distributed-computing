@@ -18,25 +18,19 @@ public class DBInitialize {
     private DataSource dataSource;
 
     @PostConstruct
-    public void initialize(){
+    public void initialize() {
         try {
             Connection connection = dataSource.getConnection();
             Statement statement = connection.createStatement();
-            statement.execute("DROP TABLE IF EXISTS Data");
+            statement.execute("DROP TABLE IF EXISTS USER");
             statement.executeUpdate(
-                    "CREATE TABLE Data(" +
-                            "id INTEGER Primary key, " +
-                            "firstName varchar(30) not null, " +
-                            "lastName varchar(30) not null)");
-//            statement.executeUpdate(
-//                    "INSERT INTO Data " +
-//                            "(firstName,lastName) " +
-//                            "VALUES " + "('Bharat','Verma')"
-//            );
+                    "CREATE TABLE USER(" +
+                            "id INTEGER PRIMARY KEY, " +
+                            "firstName VARCHAR(30) NOT NULL, " +
+                            "lastName VARCHAR(30) NOT NULL)");
             statement.close();
             connection.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

@@ -1,7 +1,7 @@
-package com.example.project;
+package com.example.project.controller;
 
-import com.example.project.entity.Data;
-import com.example.project.service.DataService;
+import com.example.project.entity.User;
+import com.example.project.service.Impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,38 +11,30 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.List;
 
 @Controller
-public class controller {
+public class UserController {
 
     @Autowired
-    DataService dataService;
-
-    @GetMapping("/home")
-    public String index() {
-        return "index";
-    }
+    UserService userService;
 
     @GetMapping("/users")
     public String getUsers(Model model) {
-        List<Data> userList = dataService.getAllUsers();
+        List<User> userList = userService.getAllUsers();
         model.addAttribute("users", userList);
         return "users";
     }
 
     @GetMapping("/addUser")
     public String addUser(Model model) {
-        model.addAttribute("data", new Data());
+        model.addAttribute("user", new User());
         return "adduser";
     }
 
     @PostMapping("/add")
-    public String add(Data data) {
-        try{
-            dataService.addUser(data);
-            System.out.println(data.getFirstName());
-            System.out.println(data.getLastName());
+    public String add(User user) {
+        try {
+            userService.addUser(user);
             return "addSuccess";
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             return "addFailed";
         }
     }

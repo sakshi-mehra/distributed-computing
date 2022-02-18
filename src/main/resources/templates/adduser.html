@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="ISO-8859-1">
   <title>Add users</title>
 </head>
 <body>
-<div class="container text-center">
-  <form th:object="${data}" th:action="@{/add}" method="post">
-    <input type="text" th:field="*{firstName}" />
-    <input type="text" th:field="*{lastName}" />
+<div>
+  <div>
+    <h3><b></b><a th:href="@{/home}">Home</a></b></h3>
+  </div>
+  <h3>Add User form</h3>
+  <form th:object="${user}" th:action="@{/add}" method="post">
+    <input type="text" th:field="*{firstName}" placeholder="First Name" />
+    <input type="text" th:field="*{lastName}" placeholder="Last Name" />
     <input type="submit" value="Submit" />
   </form>
-
- <!-- <button type="submit">Add</button> -->
 </div>
-
 </body>
 </html>
