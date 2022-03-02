@@ -22,12 +22,6 @@ public class DBInitialize {
         try {
             Connection connection = dataSource.getConnection();
             Statement statement = connection.createStatement();
-            statement.execute("DROP TABLE IF EXISTS USER");
-            statement.executeUpdate(
-                    "CREATE TABLE USER(" +
-                            "id INTEGER PRIMARY KEY, " +
-                            "firstName VARCHAR(30) NOT NULL, " +
-                            "lastName VARCHAR(30) NOT NULL)");
             statement.close();
             connection.close();
         } catch (SQLException e) {
