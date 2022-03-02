@@ -6,15 +6,24 @@ services:
     build: .
     ports:
       - "8080:8080"
+    volumes:
+      - db_data:/var/lib/sqlite
   nodeb:
     environment:
       - SERVER_PORT=8081
     build: .
     ports:
       - "8081:8081"
+    volumes:
+      - db_data:/var/lib/sqlite
   nodec:
     environment:
       - SERVER_PORT=8082
     build: .
     ports:
       - "8082:8082"
+    volumes:
+      - db_data:/var/lib/sqlite
+volumes:
+  db_data:
+    external: true
