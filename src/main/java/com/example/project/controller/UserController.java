@@ -1,5 +1,6 @@
 package com.example.project.controller;
 
+import com.example.project.ProjectApplication;
 import com.example.project.entity.User;
 import com.example.project.service.Impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,12 @@ public class UserController {
 
     @PostMapping("/add")
     public String add(User user) {
+
+        if (ProjectApplication.IS_LEADER) {
+            // Call other 2 service APIs
+            // on any failure return
+        }
+
         try {
             userService.addUser(user);
             return "addSuccess";

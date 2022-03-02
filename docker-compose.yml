@@ -3,6 +3,7 @@ services:
   nodea:
     environment:
       - SERVER_PORT=8080
+      - IS_LEADER=true
     build: .
     ports:
       - "8080:8080"
@@ -11,6 +12,7 @@ services:
   nodeb:
     environment:
       - SERVER_PORT=8081
+      - IS_LEADER=false
     build: .
     ports:
       - "8081:8081"
@@ -19,6 +21,7 @@ services:
   nodec:
     environment:
       - SERVER_PORT=8082
+      - IS_LEADER=false
     build: .
     ports:
       - "8082:8082"
