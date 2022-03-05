@@ -48,8 +48,18 @@ public class UserController {
             User newUser = new User();
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            String result_b = restTemplate.getForObject(uri_b,String.class,newUser);
-            String result_c = restTemplate.getForObject(uri_c,String.class,newUser);
+            try{
+                String result_b = restTemplate.getForObject(uri_b,String.class,newUser);
+            }
+            catch (Exception e) {
+                return "addFailed";
+            }
+            try{
+                String result_c = restTemplate.getForObject(uri_c,String.class,newUser);
+            }
+            catch (Exception e) {
+                return "addFailed";
+            }
         }
 
         try {
