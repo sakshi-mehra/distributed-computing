@@ -25,11 +25,7 @@ Build the dockerfile in the project to containerize the application
 4. Show all the containers - `docker container ls -all`
 5. List images - `docker images`
 6. Remove all the containers - `docker rm $(docker ps -a -q)`
-    
-### Testing 
-1. Add jar application run configuration 
-2. Add springboot application run configuration
+7. Connect to a container shell - `docker exec -it <container_id> /bin/bash`
+8. Remove volumes - `docker volume rm <volume1_name> <volume2_name>`
+9. Start docker compose - `docker compose up`
 
-### TODO:
-1. Add further APIs
-2. Simulate a distributed system with different services as differnet docker containers
