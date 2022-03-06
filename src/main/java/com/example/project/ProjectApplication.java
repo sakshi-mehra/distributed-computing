@@ -21,8 +21,10 @@ public class ProjectApplication {
         ApplicationContext ctx = SpringApplication.run(ProjectApplication.class, args);
 
         String leaderEnv = System.getenv("IS_LEADER");
-        LOGGER.info("Leader env : " + leaderEnv);
+        LOGGER.info("Leader environment variable : " + leaderEnv);
         if (leaderEnv.equals("true"))
             IS_LEADER = true;
+
+        LOGGER.info("Is Leader  : " + IS_LEADER);
     }
 }

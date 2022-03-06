@@ -1,32 +1,42 @@
 version: "2.2"
 services:
-  nodea:
+  server-1:
     environment:
       - SERVER_PORT=8080
       - IS_LEADER=true
     build: .
+    container_name: server-1
+    hostname: server-1
     ports:
       - "8080:8080"
     volumes:
-      - db_data:/var/lib/sqlite
-  nodeb:
+      - db_data1:/var/lib/sqlite
+  server-2:
     environment:
       - SERVER_PORT=8081
       - IS_LEADER=false
     build: .
+    container_name: server-2
+    hostname: server-2
     ports:
       - "8081:8081"
     volumes:
-      - db_data:/var/lib/sqlite
-  nodec:
+      - db_data2:/var/lib/sqlite
+  server-3:
     environment:
       - SERVER_PORT=8082
       - IS_LEADER=false
     build: .
+    container_name: server-3
+    hostname: server-3
     ports:
       - "8082:8082"
     volumes:
-      - db_data:/var/lib/sqlite
+      - db_data3:/var/lib/sqlite
 volumes:
-  db_data:
+  db_data1:
+    external: true
+  db_data2:
+    external: true
+  db_data3:
     external: true
