@@ -28,4 +28,6 @@ Build the dockerfile in the project to containerize the application
 7. Connect to a container shell - `docker exec -it <container_id> /bin/bash`
 8. Remove volumes - `docker volume rm <volume1_name> <volume2_name>`
 9. Start docker compose - `docker compose up`
+10. Stop all running containers - `docker kill $(docker ps -q)`
+11. Remove all volumes in docker - `docker volume rm $(docker volume ls -q)`
 

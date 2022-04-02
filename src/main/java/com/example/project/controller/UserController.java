@@ -103,8 +103,8 @@ public class UserController {
 
         if (ProjectApplication.IS_LEADER) {
             LOGGER.info("This is leader node, calling APIs of other nodes");
-            String url1 = "http://server-2:8081/add";
-            String url2 = "http://server-3:8082/add";
+            String url1 = "http://node2:8081/add";
+            String url2 = "http://node3:8082/add";
             String response;
             response = forwardRequest(url1, user);
             if (!response.contains("User added successfully")) {
