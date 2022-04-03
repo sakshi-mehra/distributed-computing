@@ -4,7 +4,7 @@ services:
     environment:
       - SERVER_PORT=8080
       - IS_LEADER=true
-    build: .
+    build: Node/.
     container_name: Node1
     hostname: Node1
     ports:
@@ -15,7 +15,7 @@ services:
     environment:
       - SERVER_PORT=8081
       - IS_LEADER=false
-    build: .
+    build: Node/.
     container_name: Node2
     hostname: Node2
     ports:
@@ -26,7 +26,7 @@ services:
     environment:
       - SERVER_PORT=8082
       - IS_LEADER=false
-    build: .
+    build: Node/.
     container_name: Node3
     hostname: Node3
     ports:
@@ -37,7 +37,7 @@ services:
     environment:
       - SERVER_PORT=8083
       - IS_LEADER=false
-    build: .
+    build: Node/.
     container_name: Node4
     hostname: Node4
     ports:
@@ -48,13 +48,18 @@ services:
     environment:
       - SERVER_PORT=8084
       - IS_LEADER=false
-    build: .
+    build: Node/.
     container_name: Node5
     hostname: Node5
     ports:
       - "8084:8084"
     volumes:
       - db_data5:/var/lib/sqlite
+
+  controller:
+      container_name: Controller
+      build: Controller/.
+      stdin_open: true
 volumes:
   db_data1:
     external: false

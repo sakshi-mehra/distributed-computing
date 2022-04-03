@@ -1,5 +1,6 @@
 package com.example.project;
 
+import com.example.project.raft.RaftImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.net.SocketException;
 
 @SpringBootApplication
 public class ProjectApplication {
@@ -26,5 +29,13 @@ public class ProjectApplication {
             IS_LEADER = true;
 
         LOGGER.info("Is Leader  : " + IS_LEADER);
+
+        try {
+            RaftImpl raft = new RaftImpl();
+            raft.init();
+        } catch (SocketException e) {
+            LOGGER.error(e.getMessage(), e);
+            System.exit(1);
+        }
     }
 }
