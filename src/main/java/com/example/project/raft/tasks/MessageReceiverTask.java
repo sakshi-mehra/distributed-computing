@@ -1,5 +1,6 @@
 package com.example.project.raft.tasks;
 
+import com.example.project.raft.communication.Receiver;
 import com.example.project.raft.model.Message;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -7,28 +8,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.util.Queue;
 
 /**
  * @author revanth on 4/2/22
  */
-public class MessageReceiverTask implements Task {
+public class MessageReceiverTask implements Task, ReceiveCallback {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReceiverTask.class);
 
-    private final DatagramSocket socket;
-    private byte[] buf = new byte[256];
-    private boolean stop = false;
+    private volatile boolean stop = false;
     private final Queue<Message> messageQueue;
+    private final Receiver receiver;
     private final Gson gson;
-    private final int port = 5555;
 
-    public MessageReceiverTask(Queue<Message> messageQueue) throws SocketException {
-        socket = new DatagramSocket(port);
+    public MessageReceiverTask(Queue<Message> messageQueue) throws IOException {
         this.messageQueue = messageQueue;
+        receiver = new Receiver(this);
         gson = new Gson();
     }
 
@@ -36,14 +32,9 @@ public class MessageReceiverTask implements Task {
     public void run() {
 
         while (!stop) {
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-
             try {
-                socket.receive(packet);
-                String received = new String(packet.getData(), 0, packet.getLength());
-                LOGGER.info(received);
-                messageQueue.add(gson.fromJson(received, Message.class));
-            } catch (IOException | JsonSyntaxException e) {
+                receiver.receive();
+            } catch (IOException e) {
                 LOGGER.error(e.getMessage(), e);
             }
         }
@@ -52,7 +43,20 @@ public class MessageReceiverTask implements Task {
     @Override
     public void stop() {
         stop = true;
-        socket.close();
+        try {
+            receiver.stop();
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void receive(String message) {
+        try {
+            messageQueue.add(gson.fromJson(message, Message.class));
+        } catch (JsonSyntaxException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 }
 

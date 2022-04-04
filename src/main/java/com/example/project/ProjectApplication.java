@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.net.SocketException;
+import java.io.IOException;
 
 @SpringBootApplication
 public class ProjectApplication {
@@ -33,7 +33,8 @@ public class ProjectApplication {
         try {
             RaftImpl raft = new RaftImpl();
             raft.init();
-        } catch (SocketException e) {
+        } catch (IOException e) {
+            LOGGER.error("Raft init failed with error");
             LOGGER.error(e.getMessage(), e);
             System.exit(1);
         }

@@ -14,7 +14,7 @@ public class MessageProcessorTask implements Task {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessorTask.class);
 
-    private boolean stop = false;
+    private volatile boolean stop = false;
 
     private final Queue<Message> messageQueue;
     private final MessageProcessor messageProcessor;
@@ -28,7 +28,7 @@ public class MessageProcessorTask implements Task {
     @Override
     public void run() {
         while(!stop) {
-            LOGGER.info(String.valueOf(messageQueue.size()));
+            //LOGGER.info(String.valueOf(messageQueue.size()));
             while (!messageQueue.isEmpty()) {
                 Message msg = messageQueue.poll();
                 messageProcessor.processMessage(msg);

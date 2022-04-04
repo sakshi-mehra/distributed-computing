@@ -10,8 +10,8 @@ public class TaskManger implements TaskOperations {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManger.class);
 
-    public Task task;
-    public Thread thread;
+    private final Task task;
+    private final Thread thread;
 
     public TaskManger(Task task, String taskName) {
         this.task = task;

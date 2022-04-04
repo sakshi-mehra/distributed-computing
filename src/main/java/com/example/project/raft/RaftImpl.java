@@ -3,11 +3,12 @@ package com.example.project.raft;
 import com.example.project.raft.model.Message;
 import com.example.project.raft.tasks.MessageProcessorTask;
 import com.example.project.raft.tasks.MessageReceiverTask;
+import com.example.project.raft.tasks.Task;
 import com.example.project.raft.tasks.TaskManger;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.SocketException;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -22,14 +23,17 @@ public class RaftImpl implements MessageProcessor {
     private final Queue<Message> messageQueue;
     private final TaskManger msgProcessorTaskManager;
     private final TaskManger receiverTaskManager;
+    private Gson gson;
 
-    public RaftImpl() throws SocketException {
+    public RaftImpl() throws IOException {
         LOGGER.info("Creating RAFT instance");
+
         messageQueue = new LinkedList<>();
-        msgProcessorTaskManager = new TaskManger(new MessageProcessorTask(messageQueue, this),
-                MessageProcessorTask.class.getSimpleName());
-        receiverTaskManager = new TaskManger(new MessageReceiverTask(messageQueue),
-                MessageReceiverTask.class.getSimpleName());
+        Task msgProcessorTask = new MessageProcessorTask(messageQueue, this);
+        Task msgReceiverTask = new MessageReceiverTask(messageQueue);
+        msgProcessorTaskManager = new TaskManger(msgProcessorTask, "MsgProcessorTask");
+        receiverTaskManager = new TaskManger(msgReceiverTask, "MsgReceiverTask");
+        gson = new Gson();
     }
 
     public void shutdown() {
