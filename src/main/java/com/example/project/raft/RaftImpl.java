@@ -11,6 +11,9 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -22,10 +25,9 @@ import java.util.Queue;
  */
 
 
-
+//@Component
 public class RaftImpl implements MessageProcessor {
-    @Autowired
-    RaftService raftService;
+    RaftService raftService = new RaftService();
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftImpl.class);
     private int curTerm = 0;
     private String votedFor = null;
@@ -56,7 +58,7 @@ public class RaftImpl implements MessageProcessor {
         //read from db and into local variable
         //default db values 0, null
         List<Raft> raftList = raftService.getAllUsers();
-        if(raftList.size()==0){
+        if(raftList==null){
             curTerm = 0;
             votedFor = null;
         }
@@ -64,6 +66,17 @@ public class RaftImpl implements MessageProcessor {
             curTerm = raftList.get(0).getcurrentTerm();
             votedFor = raftList.get(0).getvotedFor();
         }
+        LOGGER.info(String.valueOf(curTerm));
+        LOGGER.info(votedFor);
+
+        Raft raft = new Raft();
+        raft.setId(1);
+        raft.setcurrentTerm(2);
+        raft.setvotedFor("Node2");
+
+        raftService.metricUpdate(raft);
+        
+        
         receiverTaskManager.execute();
         msgProcessorTaskManager.execute();
     }

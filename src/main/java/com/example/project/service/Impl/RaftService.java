@@ -22,9 +22,9 @@ public class RaftService implements IRaftService {
         return list;
     }
 
-    // @Override
-    // public void addUser(User data) {
-    //     User user = userDao.save(data);
-    // }
+    @Override
+    public void metricUpdate(Raft raft) {
+        Raft raftmetric = raftDao.save(raft);
+    }
 }
 
