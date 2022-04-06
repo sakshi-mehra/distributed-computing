@@ -8,5 +8,5 @@ public interface IRaftService {
 
     public List<Raft> getAllUsers();
 
-    // public void addUser(User user);
+    public void metricUpdate(Raft raft);
 }

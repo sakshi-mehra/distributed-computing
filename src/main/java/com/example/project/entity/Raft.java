@@ -16,10 +16,10 @@ public class Raft {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "currentTerm", nullable = false, length = 30)
+    @Column(name = "currentTerm", nullable = true, length = 30)
     private int currentTerm;
 
-    @Column(name = "votedFor", nullable = false, length = 30)
+    @Column(name = "votedFor", nullable = true, length = 30)
     private String votedFor;
 
     public Integer getId() {
