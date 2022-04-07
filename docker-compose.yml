@@ -4,6 +4,7 @@ services:
     environment:
       - SERVER_PORT=8080
       - IS_LEADER=true
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db1:5432/postgres
     build: Node/.
     container_name: Node1
     hostname: Node1
@@ -11,10 +12,13 @@ services:
       - "8080:8080"
     volumes:
       - db_data1:/var/lib/sqlite
+    depends_on:
+      - db1
   node2:
     environment:
       - SERVER_PORT=8081
       - IS_LEADER=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db2:5432/postgres
     build: Node/.
     container_name: Node2
     hostname: Node2
@@ -22,10 +26,13 @@ services:
       - "8081:8081"
     volumes:
       - db_data2:/var/lib/sqlite
+    depends_on:
+      - db2
   node3:
     environment:
       - SERVER_PORT=8082
       - IS_LEADER=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db3:5432/postgres
     build: Node/.
     container_name: Node3
     hostname: Node3
@@ -33,10 +40,13 @@ services:
       - "8082:8082"
     volumes:
       - db_data3:/var/lib/sqlite
+    depends_on:
+      - db3
   node4:
     environment:
       - SERVER_PORT=8083
       - IS_LEADER=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db4:5432/postgres
     build: Node/.
     container_name: Node4
     hostname: Node4
@@ -44,10 +54,13 @@ services:
       - "8083:8083"
     volumes:
       - db_data4:/var/lib/sqlite
+    depends_on:
+      - db4
   node5:
     environment:
       - SERVER_PORT=8084
       - IS_LEADER=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db5:5432/postgres
     build: Node/.
     container_name: Node5
     hostname: Node5
@@ -55,11 +68,43 @@ services:
       - "8084:8084"
     volumes:
       - db_data5:/var/lib/sqlite
+    depends_on:
+      - db5
 
   controller:
       container_name: Controller
       build: Controller/.
       stdin_open: true
+  db1:
+    image: 'postgres:13.1-alpine'
+    container_name: db1
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db2:
+    image: 'postgres:13.1-alpine'
+    container_name: db2
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db3:
+    image: 'postgres:13.1-alpine'
+    container_name: db3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db4:
+    image: 'postgres:13.1-alpine'
+    container_name: db4
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db5:
+    image: 'postgres:13.1-alpine'
+    container_name: db5
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
 volumes:
   db_data1:
     external: false

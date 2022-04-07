@@ -6,10 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.io.IOException;
 
 @SpringBootApplication
 public class ProjectApplication {
@@ -20,6 +20,9 @@ public class ProjectApplication {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private RaftImpl raft;
+
     public static void main(String[] args) {
         ApplicationContext ctx = SpringApplication.run(ProjectApplication.class, args);
 
@@ -29,14 +32,10 @@ public class ProjectApplication {
             IS_LEADER = true;
 
         LOGGER.info("Is Leader  : " + IS_LEADER);
+    }
 
-        try {
-            RaftImpl raft = new RaftImpl();
-            raft.init();
-        } catch (IOException e) {
-            LOGGER.error("Raft init failed with error");
-            LOGGER.error(e.getMessage(), e);
-            System.exit(1);
-        }
+    @EventListener(ApplicationReadyEvent.class)
+    public void afterStartup() {
+        raft.init();
     }
 }

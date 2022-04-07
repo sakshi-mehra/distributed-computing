@@ -10,39 +10,39 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "Raft")
-public class Raft {
+public class RaftPersistenceInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private long id;
 
     @Column(name = "currentTerm", nullable = true, length = 30)
-    private int currentTerm;
+    private long currentTerm;
 
     @Column(name = "votedFor", nullable = true, length = 30)
     private String votedFor;
 
-    public Integer getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public int getcurrentTerm() {
+    public long getCurrentTerm() {
         return currentTerm;
     }
 
-    public void setcurrentTerm(int currentTerm) {
+    public void setCurrentTerm(long currentTerm) {
         this.currentTerm = currentTerm;
     }
 
-    public String getvotedFor() {
+    public String getVotedFor() {
         return votedFor;
     }
 
-    public void setvotedFor(String votedFor) {
+    public void setVotedFor(String votedFor) {
         this.votedFor = votedFor;
     }
 

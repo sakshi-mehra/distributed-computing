@@ -1,19 +1,17 @@
 package com.example.project.raft;
 
-import com.example.project.entity.Raft;
+import com.example.project.entity.RaftPersistenceInfo;
 import com.example.project.raft.model.Message;
 import com.example.project.raft.tasks.MessageProcessorTask;
 import com.example.project.raft.tasks.MessageReceiverTask;
 import com.example.project.raft.tasks.Task;
 import com.example.project.raft.tasks.TaskManger;
-import com.example.project.service.Impl.RaftService;
+import com.example.project.service.Impl.RaftPersistenceService;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -24,12 +22,14 @@ import java.util.Queue;
  * @author revanth on 4/3/22
  */
 
-
-//@Component
+@Component
 public class RaftImpl implements MessageProcessor {
-    RaftService raftService = new RaftService();
+
+    @Autowired
+    RaftPersistenceService raftService;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftImpl.class);
-    private int curTerm = 0;
+    private long curTerm = 0;
     private String votedFor = null;
 
     // TODO: There are cases to handle for message queue. It is not thread safe and not size bounded.
@@ -52,31 +52,27 @@ public class RaftImpl implements MessageProcessor {
     public void shutdown() {
         receiverTaskManager.cancel();
         msgProcessorTaskManager.cancel();
+
+        RaftPersistenceInfo raftPersistence = new RaftPersistenceInfo();
+        raftPersistence.setCurrentTerm(2);
+        raftPersistence.setVotedFor("Node 2");
+        raftService.update(raftPersistence);
     }
 
     public void init() {
-        //read from db and into local variable
-        //default db values 0, null
-        List<Raft> raftList = raftService.getAllUsers();
-        if(raftList==null){
+
+        List<RaftPersistenceInfo> raftPersistenceInfoList = raftService.getAllInfo();
+
+        if(raftPersistenceInfoList.size() == 0){
             curTerm = 0;
             votedFor = null;
-        }
-        else {
-            curTerm = raftList.get(0).getcurrentTerm();
-            votedFor = raftList.get(0).getvotedFor();
+        } else {
+            curTerm = raftPersistenceInfoList.get(0).getCurrentTerm();
+            votedFor = raftPersistenceInfoList.get(0).getVotedFor();
         }
         LOGGER.info(String.valueOf(curTerm));
         LOGGER.info(votedFor);
 
-        Raft raft = new Raft();
-        raft.setId(1);
-        raft.setcurrentTerm(2);
-        raft.setvotedFor("Node2");
-
-        raftService.metricUpdate(raft);
-        
-        
         receiverTaskManager.execute();
         msgProcessorTaskManager.execute();
     }
@@ -93,12 +89,4 @@ public class RaftImpl implements MessageProcessor {
                 break;
         }
     }
-
-    //create election function
-
-
-    // convert follower function
-
-    //timeout code
-
 }
