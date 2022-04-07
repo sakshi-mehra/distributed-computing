@@ -17,7 +17,7 @@ public class Message {
     @SerializedName("request")
     RequestType requestType;
 
-    String term;
+    long term;
 
     String key;
 

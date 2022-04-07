@@ -16,8 +16,8 @@ public class RaftPersistenceInfo {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @Column(name = "currentTerm", nullable = true, length = 30)
-    private long currentTerm;
+    @Column(name = "term", nullable = true, length = 30)
+    private long term;
 
     @Column(name = "votedFor", nullable = true, length = 30)
     private String votedFor;
@@ -30,12 +30,12 @@ public class RaftPersistenceInfo {
         this.id = id;
     }
 
-    public long getCurrentTerm() {
-        return currentTerm;
+    public long getTerm() {
+        return term;
     }
 
-    public void setCurrentTerm(long currentTerm) {
-        this.currentTerm = currentTerm;
+    public void setTerm(long term) {
+        this.term = term;
     }
 
     public String getVotedFor() {
@@ -48,7 +48,7 @@ public class RaftPersistenceInfo {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", currentTerm=" + currentTerm + ", votedFor=" + votedFor + "]";
+        return "User [id=" + id + ", currentTerm=" + term + ", votedFor=" + votedFor + "]";
     }
 }
 
