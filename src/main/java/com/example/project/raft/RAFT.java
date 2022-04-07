@@ -11,5 +11,5 @@ public interface RAFT {
 
     void onVotingRequestReceived(String candidateName, Message message);
 
-    void onVoteReceived();
+    void onVoteReceived(Message message);
 }

@@ -29,14 +29,15 @@ public class MessageProcessorTask implements Task {
     public void run() {
         while(!stop) {
             //LOGGER.info(String.valueOf(messageQueue.size()));
-            while (!messageQueue.isEmpty()) {
-                Message msg = messageQueue.poll();
-                messageProcessor.processMessage(msg);
-            }
-           try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-               LOGGER.error(e.getMessage(), e);
+            try {
+                while (!messageQueue.isEmpty()) {
+                    Message msg = messageQueue.poll();
+                    if (msg != null)
+                        messageProcessor.processMessage(msg);
+                }
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
+                // Ignore any exception from the raft processor to continue the execution
             }
         }
     }

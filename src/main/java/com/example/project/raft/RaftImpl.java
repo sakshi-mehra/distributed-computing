@@ -33,7 +33,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     private final Queue<Message> messageQueue;
     private final TaskManger msgProcessorTaskManager;
     private final TaskManger receiverTaskManager;
-    private final Timer electionTimer;
+    private Timer electionTimer;
     private final Timer heartbeatTimer;
     private ElectionTask electionTask;
     private HeartbeatTask heartbeatTask;
@@ -41,12 +41,13 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     private final Sender sender;
     private final Gson gson;
 
-    private final String myName;
+    private final String serverName;
     private NodeState nodeState;
     private long currentTerm = 0;
     private String votedFor = null;
     private int voteCount;
     private String leaderNode = null;
+    private final Object lock = new Object();
 
     public RaftImpl() throws IOException {
         LOGGER.info("Creating RAFT instance");
@@ -62,29 +63,43 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         sender = new Sender();
         gson = new Gson();
 
-        myName = Utils.getHostName();
+        serverName = Utils.getHostName();
         nodeState = NodeState.FOLLOWER;
         voteCount = 0;
     }
 
-    public void scheduleElection() {
-        long electionTimeout = Utils.getRandom(15000, 30000);
+    public synchronized void scheduleElection() {
+        long electionTimeout = Utils.getRandom(Configs.ELECTION_TIMEOUT_MIN, Configs.ELECTION_TIMEOUT_MAX);
         electionTask = new ElectionTask(electionTimeout, this);
-        electionTimer.schedule(electionTask, electionTask.getTimeout());
-        LOGGER.info(String.format("Election scheduled by %s in %d ms", myName, electionTimeout));
+        try {
+            electionTimer.schedule(electionTask, electionTask.getTimeout());
+        } catch (IllegalStateException e) {
+            electionTimer = new Timer();
+            electionTimer.schedule(electionTask, electionTask.getTimeout());
+        }
+
+        LOGGER.info(String.format("Election scheduled by %s in next %d ms", serverName, electionTimeout));
     }
 
     public void resetElectionTimer() {
-        LOGGER.info(String.format("Resetting election timeout by %s set for %d", myName, electionTask.getTimeout()));
-        electionTask.cancel();
+        LOGGER.info(String.format("Resetting election timeout by %s set for %d ms", serverName,
+                electionTask.getTimeout()));
+        synchronized (lock) {
+            if (electionTask != null)
+                electionTask.cancel();
+        }
+
         scheduleElection();
     }
 
     @Override
     public void onVotingRequestReceived(String candidateName, Message message) {
         long requestTerm = message.getTerm();
+        String senderName = message.getSenderName();
 
-        LOGGER.info("Vote requested by " + candidateName + " for term : " + requestTerm);
+        // Ignore self request
+        if (senderName.equals(serverName))
+            return;
 
         if (currentTerm < requestTerm) {
             LOGGER.info("Voted for " + candidateName + " for term : " + requestTerm);
@@ -99,13 +114,21 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     public void onAppendRPCReceived(Message message) {
 
         long requestTerm = message.getTerm();
+        String senderName = message.getSenderName();
+
+        LOGGER.info(String.format("Append RPC obtained from %s for term %s and my term %d and state : %s", senderName,
+                requestTerm, currentTerm, nodeState));
+
+        // Ignore self heartbeat
+        if (senderName.equals(serverName))
+            return;
 
         if (nodeState == NodeState.FOLLOWER) {
             resetElectionTimer();
             leaderNode = message.getSenderName();
         } else if (nodeState == NodeState.CANDIDATE) {
 
-            // Received a heart beat from leader
+            // Received a heart beat from leader and his term is at least my term then withdraw
             if (requestTerm >= currentTerm) {
                 nodeState = NodeState.FOLLOWER;
                 leaderNode = message.getSenderName();
@@ -113,46 +136,84 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
             }
         } else {
             // If leader
+
+            if (requestTerm == currentTerm) {
+                LOGGER.info("**********Cannot have 2 leaders for the same term, so downgrade");
+                convertToFollower();
+            }
         }
     }
 
     @Override
     public void sendHeartbeat() {
-        LOGGER.info("Send Heartbeat");
+        LOGGER.info(String.format("Send Heartbeat : %s ", serverName));
         sendHeartbeatRPC();
-        heartbeatTask = new HeartbeatTask(this);
-        heartbeatTimer.schedule(heartbeatTask, Configs.HEARTBEAT_TIMEOUT);
+        synchronized (lock) {
+            heartbeatTask = new HeartbeatTask(this);
+            heartbeatTimer.schedule(heartbeatTask, Configs.HEARTBEAT_TIMEOUT);
+        }
     }
 
     @Override
-    public void startElection() {
+    public synchronized void startElection() {
+        LOGGER.info(String.format("Election timer timed out for %s", serverName));
         nodeState = NodeState.CANDIDATE;
         currentTerm++;
-        votedFor = myName;
+        votedFor = serverName;
         updatePersistenceInfo(currentTerm, votedFor);
-        voteCount = 0;
-        LOGGER.info(String.format("%s became candidate", myName));
+        voteCount = 1;
+        LOGGER.info(String.format("%s became candidate. Vote count : %d, Current Term : %s",
+                serverName, voteCount, currentTerm));
         sendVoteRequestRPC();
         scheduleElection();
     }
 
     @Override
-    public void onVoteReceived() {
+    public void onVoteReceived(Message message) {
 
-        if (nodeState == NodeState.LEADER)
+        String senderName = message.getSenderName();
+
+        if (nodeState == NodeState.LEADER || nodeState == NodeState.FOLLOWER) {
+            LOGGER.info(String.format("Current node state is %s so ignoring vote from %s", nodeState, senderName));
             return;
+        }
+
+        long requestTerm = message.getTerm();
+
+        if (requestTerm < currentTerm) {
+            LOGGER.info(String.format("Request term is less than current. reqTerm : %d, curTerm: %d. " +
+                            "So ignoring vote from %s",
+                    requestTerm, currentTerm, senderName));
+            return;
+        }
 
         voteCount++;
+        LOGGER.info(String.format("Used the vote from %s, Vote Count : %d", message.getSenderName(), voteCount));
 
-        if (voteCount >= Configs.MAJORITY_COUNT ) {
+        if (voteCount >= Configs.MAJORITY_COUNT) {
             nodeState = NodeState.LEADER;
-            leaderNode = myName;
+            leaderNode = serverName;
+            LOGGER.info(String.format("I(%s) became Leader. Vote count : %d, Current Term : %d",
+                    serverName, voteCount, currentTerm));
             voteCount = 0;
-            LOGGER.info(myName + " Became Leader");
-            LOGGER.info(String.format("Stopping election timer since %s became leader", myName));
+            LOGGER.info(String.format("Stopping election timer since %s became leader", serverName));
             electionTimer.cancel();
             sendHeartbeat();
         }
+    }
+
+    public boolean checkForDowngrade(Message message) {
+        long requestTerm = message.getTerm();
+
+        if (requestTerm > currentTerm && nodeState == NodeState.LEADER) {
+            LOGGER.info("Downgrade to follower");
+            convertToFollower();
+            currentTerm = requestTerm;
+            updatePersistenceInfo(currentTerm, null);
+            return true;
+        }
+
+        return false;
     }
 
     public void init() {
@@ -189,6 +250,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 convertToFollower();
                 break;
             case LEADER_INFO:
+                LOGGER.info("Leader info");
                 LOGGER.error(leaderNode);
                 break;
             case TIMEOUT:
@@ -196,42 +258,33 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 startElection();
                 break;
             case APPEND_RPC:
-                if (requestTerm > currentTerm && nodeState == NodeState.LEADER) {
-                    LOGGER.info("Downgrade");
-                    nodeState = NodeState.FOLLOWER;
-                    heartbeatTimer.cancel();
-                    currentTerm = requestTerm;
+                if (checkForDowngrade(message))
                     return;
-                }
                 onAppendRPCReceived(message);
                 break;
             case VOTE_ACK:
-                if (requestTerm > currentTerm && nodeState == NodeState.LEADER) {
-                    LOGGER.info("Downgrade");
-                    nodeState = NodeState.FOLLOWER;
-                    currentTerm = requestTerm;
-                    heartbeatTimer.cancel();
+                if (checkForDowngrade(message))
                     return;
-                }
-                onVoteReceived();
+                onVoteReceived(message);
                 break;
             case VOTE_REQUEST:
-                if (requestTerm > currentTerm && nodeState == NodeState.LEADER) {
-                    LOGGER.info("Downgrade");
-                    nodeState = NodeState.FOLLOWER;
-                    currentTerm = requestTerm;
-                    heartbeatTimer.cancel();
+                if (checkForDowngrade(message))
                     return;
-                }
                 onVotingRequestReceived(message.getSenderName(), message);
                 break;
-
         }
     }
 
     public void shutdown() {
         receiverTaskManager.cancel();
         msgProcessorTaskManager.cancel();
+
+        if (electionTask != null)
+            electionTask.cancel();
+
+        if (heartbeatTask != null)
+            heartbeatTask.cancel();
+
         electionTimer.cancel();
         heartbeatTimer.cancel();
     }
@@ -239,7 +292,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     public void sendHeartbeatRPC() {
         Message message = new Message();
         message.setRequestType(RequestType.APPEND_RPC);
-        message.setSenderName(myName);
+        message.setSenderName(serverName);
         message.setTerm(currentTerm);
         try {
             sender.multicast(gson.toJson(message));
@@ -250,7 +303,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
     public void sendVoteResponseACK(String candidateName) {
         Message message = new Message();
-        message.setSenderName(myName);
+        message.setSenderName(serverName);
         message.setRequestType(RequestType.VOTE_ACK);
         message.setTerm(currentTerm);
         try {
@@ -262,7 +315,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
     public void sendVoteRequestRPC() {
         Message message = new Message();
-        message.setSenderName(myName);
+        message.setSenderName(serverName);
         message.setTerm(currentTerm);
         message.setRequestType(RequestType.VOTE_REQUEST);
         try {
@@ -286,7 +339,9 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
             return;
 
         nodeState = NodeState.FOLLOWER;
+        synchronized (lock) {
+            heartbeatTask.cancel();
+        }
         scheduleElection();
-        heartbeatTimer.cancel();
     }
 }
