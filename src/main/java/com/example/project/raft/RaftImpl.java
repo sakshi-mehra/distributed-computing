@@ -252,6 +252,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
             case LEADER_INFO:
                 LOGGER.info("Leader info");
                 LOGGER.error(leaderNode);
+                sendLeaderInfo();
                 break;
             case TIMEOUT:
                 resetElectionTimer();
@@ -308,6 +309,20 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         message.setTerm(currentTerm);
         try {
             sender.uniCast(candidateName, gson.toJson(message));
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+    }
+
+    public void sendLeaderInfo() {
+        Message message = new Message();
+        message.setSenderName(serverName);
+        message.setRequestType(RequestType.LEADER_INFO);
+        message.setTerm(currentTerm);
+        message.setKey("LEADER");
+        message.setValue(leaderNode);
+        try {
+            sender.uniCast("Controller", gson.toJson(message));
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
