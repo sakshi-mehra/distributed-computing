@@ -2,6 +2,7 @@ import json
 import socket
 import traceback
 import time
+import sys
 
 # Wait following seconds below sending the controller request
 time.sleep(5)
@@ -11,7 +12,7 @@ msg = json.load(open("Message.json"))
 
 # Initialize
 sender = "Controller"
-target = "Node1"
+target = sys.argv[1]
 port = 5555
 
 # Request

@@ -35,7 +35,7 @@ public class MessageReceiverTask implements Task, ReceiveCallback {
             try {
                 receiver.receive();
             } catch (IOException e) {
-                LOGGER.error(e.getMessage(), e);
+                LOGGER.error(e.getMessage());
             }
         }
     }

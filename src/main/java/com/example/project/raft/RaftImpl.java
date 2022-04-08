@@ -251,7 +251,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 break;
             case LEADER_INFO:
                 LOGGER.info("Leader info");
-                LOGGER.error(leaderNode);
+                LOGGER.info(leaderNode);
                 sendLeaderInfo();
                 break;
             case TIMEOUT:

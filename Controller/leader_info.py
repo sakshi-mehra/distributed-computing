@@ -33,4 +33,5 @@ except:
 
 while True:
     message, address = skt.recvfrom(1024)
-    print(message)
+    print("Response from server:" , message)
+    break
