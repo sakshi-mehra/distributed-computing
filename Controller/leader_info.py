@@ -2,7 +2,7 @@ import json
 import socket
 import traceback
 import time
-
+import sys
 # Wait following seconds below sending the controller request
 time.sleep(5)
 
@@ -11,7 +11,7 @@ msg = json.load(open("Message.json"))
 
 # Initialize
 sender = "Controller"
-target = "Node5"
+target = sys.argv[1]
 port = 5555
 
 # Request
@@ -31,3 +31,6 @@ except:
     #  socket.gaierror: [Errno -3] would be thrown if target IP container does not exist or exits, write your listener
     print(f"ERROR WHILE SENDING REQUEST ACROSS : {traceback.format_exc()}")
 
+while True:
+    message, address = skt.recvfrom(1024)
+    print(message)

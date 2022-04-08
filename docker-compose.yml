@@ -10,8 +10,6 @@ services:
     hostname: Node1
     ports:
       - "8080:8080"
-    volumes:
-      - db_data1:/var/lib/sqlite
     depends_on:
       - db1
   node2:
@@ -24,8 +22,6 @@ services:
     hostname: Node2
     ports:
       - "8081:8081"
-    volumes:
-      - db_data2:/var/lib/sqlite
     depends_on:
       - db2
   node3:
@@ -38,8 +34,6 @@ services:
     hostname: Node3
     ports:
       - "8082:8082"
-    volumes:
-      - db_data3:/var/lib/sqlite
     depends_on:
       - db3
   node4:
@@ -52,8 +46,6 @@ services:
     hostname: Node4
     ports:
       - "8083:8083"
-    volumes:
-      - db_data4:/var/lib/sqlite
     depends_on:
       - db4
   node5:
@@ -66,8 +58,6 @@ services:
     hostname: Node5
     ports:
       - "8084:8084"
-    volumes:
-      - db_data5:/var/lib/sqlite
     depends_on:
       - db5
 
@@ -105,14 +95,4 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-volumes:
-  db_data1:
-    external: false
-  db_data2:
-    external: false
-  db_data3:
-    external: false
-  db_data4:
-    external: false
-  db_data5:
-    external: false
+
