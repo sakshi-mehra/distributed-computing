@@ -1,7 +1,10 @@
 package com.example.project.raft.tasks;
 
+import com.example.project.raft.communication.Message;
 import com.example.project.raft.communication.Receiver;
-import com.example.project.raft.model.Message;
+import com.example.project.raft.model.AppendEntriesMessage;
+import com.example.project.raft.model.BaseMessage;
+import com.example.project.raft.model.RequestVoteMessage;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
@@ -53,7 +56,19 @@ public class MessageReceiverTask implements Task, ReceiveCallback {
     @Override
     public void receive(String message) {
         try {
-            messageQueue.add(gson.fromJson(message, Message.class));
+            BaseMessage baseMessage = gson.fromJson(message, BaseMessage.class);
+            Message msg = baseMessage;
+
+            switch (baseMessage.getRequestType()) {
+                case VOTE_REQUEST:
+                    msg = gson.fromJson(message, RequestVoteMessage.class);
+                    break;
+                case APPEND_RPC:
+                    msg = gson.fromJson(message, AppendEntriesMessage.class);
+                    break;
+            }
+
+            messageQueue.add(msg);
         } catch (JsonSyntaxException e) {
             LOGGER.error(e.getMessage(), e);
         }

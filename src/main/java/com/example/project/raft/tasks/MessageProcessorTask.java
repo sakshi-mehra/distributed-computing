@@ -1,6 +1,7 @@
 package com.example.project.raft.tasks;
 
-import com.example.project.raft.model.Message;
+import com.example.project.raft.communication.Message;
+import com.example.project.raft.model.BaseMessage;
 import com.example.project.raft.MessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
