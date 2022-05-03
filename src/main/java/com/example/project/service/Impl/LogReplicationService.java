@@ -16,17 +16,21 @@ public class LogReplicationService implements ILogReplicationService {
     private LogDao logDao;
 
     @Override
-    public long getLastLogIndex() {
+    public Long getLastLogIndex() {
         return logDao.count();
     }
 
     @Override
-    public long getLastLogTerm() {
+    public Long getLastLogTerm() {
 
         if (logDao.count() == 0)
             return logDao.count();
 
         Log log = logDao.getById(logDao.count());
         return log.getTerm();
+    }
+
+    public void save(Log msg){
+        logDao.save(msg);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.project.raft;
 
+import com.example.project.entity.Log;
 import com.example.project.entity.RaftPersistenceInfo;
 import com.example.project.raft.communication.Configs;
 import com.example.project.raft.communication.Message;
@@ -85,7 +86,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         matchIndex = new long[Configs.NODE_COUNT];
 
         for (int i = 0; i < nextIndex.length; i++) {
-            nextIndex[i] = logReplicationService.getLastLogIndex() + 1;
+//            nextIndex[i] = logReplicationService.getLastLogIndex() + 1;
             matchIndex[i] = 0;
         }
     }
@@ -311,7 +312,23 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                     return;
                 onVotingRequestReceived(message);
                 break;
+            case STORE_REQUEST:
+                if(nodeState!=NodeState.LEADER){
+                    sendLeaderInfo();
+                    return;
+                }
+                updateMessageInfo(message);
+                break;
         }
+    }
+
+    public void updateMessageInfo(Message msg) {
+        Log storemessage = new Log();
+        BaseMessage basemsg = (BaseMessage)(msg);
+        storemessage.setTerm(basemsg.getTerm());
+        storemessage.setEntryKey(basemsg.getKey());
+        storemessage.setEntryValue(basemsg.getValue());
+        logReplicationService.save(storemessage);
     }
 
     public void shutdown() {

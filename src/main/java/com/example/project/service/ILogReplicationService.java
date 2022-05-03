@@ -5,7 +5,7 @@ package com.example.project.service;
  */
 public interface ILogReplicationService {
 
-    long getLastLogIndex();
+    Long getLastLogIndex();
 
-    long getLastLogTerm();
+    Long getLastLogTerm();
 }

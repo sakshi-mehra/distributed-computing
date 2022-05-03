@@ -11,10 +11,10 @@ public class Log {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long logId;
+    private Long logId;
 
     @Column(name = "term", nullable = false)
-    private long term;
+    private Long term;
 
     @Column(name = "entryKey", nullable = false)
     private String entryKey;
@@ -22,7 +22,7 @@ public class Log {
     @Column(name = "entryValue", nullable = true)
     private String entryValue;
 
-    public long getLogId() {
+    public Long getLogId() {
         return logId;
     }
 
@@ -30,7 +30,7 @@ public class Log {
         this.logId = logId;
     }
 
-    public long getTerm() {
+    public Long getTerm() {
         return term;
     }
 
