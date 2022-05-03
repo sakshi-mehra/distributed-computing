@@ -1,5 +1,8 @@
 package com.example.project.entity;
 
+import com.example.project.utils.Exclude;
+import com.google.gson.annotations.SerializedName;
+
 import javax.persistence.*;
 
 /**
@@ -9,20 +12,24 @@ import javax.persistence.*;
 @Table(name="Log")
 public class Log {
 
+    @Exclude
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long logId;
+    private Long logId;
 
+    @SerializedName("Term")
     @Column(name = "term", nullable = false)
-    private long term;
+    private Long term;
 
+    @SerializedName("Key")
     @Column(name = "entryKey", nullable = false)
     private String entryKey;
 
-    @Column(name = "entryValue", nullable = true)
+    @SerializedName("Value")
+    @Column(name = "entryValue")
     private String entryValue;
 
-    public long getLogId() {
+    public Long getLogId() {
         return logId;
     }
 
@@ -30,7 +37,7 @@ public class Log {
         this.logId = logId;
     }
 
-    public long getTerm() {
+    public Long getTerm() {
         return term;
     }
 

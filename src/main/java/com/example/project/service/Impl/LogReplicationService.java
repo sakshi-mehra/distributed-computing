@@ -6,6 +6,8 @@ import com.example.project.service.ILogReplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author revanth on 4/21/22
  */
@@ -16,17 +18,37 @@ public class LogReplicationService implements ILogReplicationService {
     private LogDao logDao;
 
     @Override
-    public long getLastLogIndex() {
+    public Long getLastLogIndex() {
         return logDao.count();
     }
 
     @Override
-    public long getLastLogTerm() {
+    public Long getLastLogTerm() {
 
         if (logDao.count() == 0)
             return logDao.count();
 
         Log log = logDao.getById(logDao.count());
         return log.getTerm();
+    }
+
+    @Override
+    public Long getLogCount() {
+        return logDao.count();
+    }
+
+    @Override
+    public void save(Log log) {
+        logDao.save(log);
+    }
+
+    @Override
+    public List<Log> getAllLogs() {
+        return logDao.findAll();
+    }
+
+    @Override
+    public Log getLogByIndex(Long id) {
+        return logDao.getById(id);
     }
 }

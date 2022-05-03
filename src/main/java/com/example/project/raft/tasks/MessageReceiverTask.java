@@ -37,8 +37,8 @@ public class MessageReceiverTask implements Task, ReceiveCallback {
         while (!stop) {
             try {
                 receiver.receive();
-            } catch (IOException e) {
-                LOGGER.error(e.getMessage());
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
             }
         }
     }

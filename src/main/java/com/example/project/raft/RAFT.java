@@ -12,4 +12,6 @@ public interface RAFT {
     void onVotingRequestReceived(Message message);
 
     void onVoteReceived(Message message);
+
+    void onClientRequest(Message message);
 }

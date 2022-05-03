@@ -11,5 +11,4 @@ public interface LogDao extends JpaRepository<Log, Long> {
     @Override
     Log getById(Long id);
 
-    long getLastLogTerm();
 }

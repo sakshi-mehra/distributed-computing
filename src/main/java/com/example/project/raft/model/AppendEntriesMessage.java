@@ -18,5 +18,5 @@ public class AppendEntriesMessage extends BaseMessage {
 
     long leaderCommit;
 
-    String[] entries;
+    String entries;
 }
