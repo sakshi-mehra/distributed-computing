@@ -16,11 +16,11 @@ public class StoreMessage {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @Column(name = "senderName", nullable = true, length = 30)
-    private String senderName;
-
-    @Column(name = "request", nullable = true, length = 30)
-    private String requestType;
+//    @Column(name = "senderName", nullable = true, length = 30)
+//    private String senderName;
+//
+//    @Column(name = "request", nullable = true, length = 30)
+//    private String requestType;
 
     @Column(name = "term", nullable = true, length = 30)
     private long term;
@@ -39,21 +39,21 @@ public class StoreMessage {
         this.id = id;
     }
 
-    public String getSenderName() {
-        return senderName;
-    }
-
-    public void setSenderName(String senderName) {
-        this.senderName = senderName;
-    }
-
-    public String getRequestType() {
-        return requestType;
-    }
-
-    public void setRequestType(String requestType) {
-        this.requestType = requestType;
-    }
+//    public String getSenderName() {
+//        return senderName;
+//    }
+//
+//    public void setSenderName(String senderName) {
+//        this.senderName = senderName;
+//    }
+//
+//    public String getRequestType() {
+//        return requestType;
+//    }
+//
+//    public void setRequestType(String requestType) {
+//        this.requestType = requestType;
+//    }
 
     public long getTerm() {
         return term;
