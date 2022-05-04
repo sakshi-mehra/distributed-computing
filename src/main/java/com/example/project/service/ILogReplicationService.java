@@ -15,9 +15,15 @@ public interface ILogReplicationService {
 
     void save(Log log);
 
+    void saveAll(List<Log> logs);
+
     List<Log> getAllLogs();
 
     Long getLogCount();
 
     Log getLogByIndex(Long id);
+
+    Long getLogTermByIndex(Long id);
+
+    List<Log> getAllLogsGreaterThanEqual(long logId);
 }

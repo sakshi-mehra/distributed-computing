@@ -19,17 +19,19 @@ public class LogReplicationService implements ILogReplicationService {
 
     @Override
     public Long getLastLogIndex() {
-        return logDao.count();
+        if (logDao.count() == 0)
+            return 0L;
+
+        return logDao.findTopByOrderByLogIdDesc().getLogId();
     }
 
     @Override
     public Long getLastLogTerm() {
 
         if (logDao.count() == 0)
-            return logDao.count();
+            return 0L;
 
-        Log log = logDao.getById(logDao.count());
-        return log.getTerm();
+        return logDao.findTopByOrderByLogIdDesc().getTerm();
     }
 
     @Override
@@ -50,5 +52,24 @@ public class LogReplicationService implements ILogReplicationService {
     @Override
     public Log getLogByIndex(Long id) {
         return logDao.getById(id);
+    }
+
+    @Override
+    public Long getLogTermByIndex(Long id) {
+
+        if (id == 0)
+            return 0L;
+
+        return getLogByIndex(id).getTerm();
+    }
+
+    @Override
+    public List<Log> getAllLogsGreaterThanEqual(long logId) {
+        return logDao.findByLogIdGreaterThanEqual(logId);
+    }
+
+    @Override
+    public void saveAll(List<Log> logs) {
+        logDao.saveAll(logs);
     }
 }

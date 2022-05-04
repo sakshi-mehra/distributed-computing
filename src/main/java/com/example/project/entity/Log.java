@@ -60,4 +60,14 @@ public class Log {
     public void setEntryValue(String entryValue) {
         this.entryValue = entryValue;
     }
+
+    @Override
+    public String toString() {
+        return "Log{" +
+                "logId=" + logId +
+                ", term=" + term +
+                ", entryKey='" + entryKey + '\'' +
+                ", entryValue='" + entryValue + '\'' +
+                '}';
+    }
 }
