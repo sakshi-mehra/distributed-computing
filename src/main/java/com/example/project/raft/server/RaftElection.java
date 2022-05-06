@@ -66,7 +66,8 @@ public class RaftElection implements ElectionCallback {
         serverState.incrementCurrTerm();
         serverState.setVotedFor(serverState.getServerName());
         serverState.setVoteCount(1);
-        raft.updatePersistenceInfo(serverState.getCurrentTerm(), serverState.getVotedFor());
+        raft.updatePersistenceInfo(serverState.getCurrentTerm(), serverState.getVotedFor(),
+                serverState.getLastApplied());
 
         LOGGER.info(String.format("%s became candidate. Vote count : %d, Current Term : %s",
                 serverState.getServerName(), serverState.getVoteCount(), serverState.getCurrentTerm()));

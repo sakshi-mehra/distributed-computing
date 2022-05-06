@@ -15,16 +15,16 @@ import java.net.MulticastSocket;
  */
 public class Receiver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MessageReceiverTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Receiver.class);
 
     private final MulticastSocket socket;
     private final InetAddress group;
     private byte[] buf = new byte[Configs.MSG_BUFFER_LENGTH];
     private final ReceiveCallback receiveCallback;
 
-    public Receiver(ReceiveCallback receiveCallback) throws IOException {
-        socket = new MulticastSocket(Configs.PORT);
-        group = InetAddress.getByName(Configs.GROUP_NAME);
+    public Receiver(ReceiveCallback receiveCallback, String host, int port) throws IOException {
+        socket = new MulticastSocket(port);
+        group = InetAddress.getByName(host);
         socket.joinGroup(group);
         this.receiveCallback = receiveCallback;
     }

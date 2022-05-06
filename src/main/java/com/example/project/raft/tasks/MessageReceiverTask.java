@@ -1,5 +1,6 @@
 package com.example.project.raft.tasks;
 
+import com.example.project.raft.communication.Configs;
 import com.example.project.raft.communication.Message;
 import com.example.project.raft.communication.Receiver;
 import com.example.project.raft.model.AppendEntriesMessage;
@@ -26,9 +27,9 @@ public class MessageReceiverTask implements Task, ReceiveCallback {
     private final Receiver receiver;
     private final Gson gson;
 
-    public MessageReceiverTask(Queue<Message> messageQueue) throws IOException {
+    public MessageReceiverTask(Queue<Message> messageQueue, String host, int port) throws IOException {
         this.messageQueue = messageQueue;
-        receiver = new Receiver(this);
+        receiver = new Receiver(this, host, port);
         gson = new Gson();
     }
 

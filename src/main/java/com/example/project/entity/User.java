@@ -1,5 +1,8 @@
 package com.example.project.entity;
 
+import com.example.project.utils.Exclude;
+import lombok.EqualsAndHashCode;
+
 import javax.persistence.*;
 
 import javax.persistence.Entity;
@@ -12,6 +15,7 @@ import javax.persistence.Table;
 @Table(name = "User1")
 public class User {
 
+    @Exclude
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
@@ -50,4 +54,5 @@ public class User {
     public String toString() {
         return "User [id=" + id + ", FirstName=" + firstName + ", LastName=" + lastName + "]";
     }
+
 }

@@ -19,6 +19,9 @@ public class RaftPersistenceInfo {
     @Column(name = "term", nullable = true, length = 30)
     private long term;
 
+    @Column(name = "lastApplied", nullable = true, length = 30)
+    private long lastApplied;
+
     @Column(name = "votedFor", nullable = true, length = 30)
     private String votedFor;
 
@@ -46,9 +49,22 @@ public class RaftPersistenceInfo {
         this.votedFor = votedFor;
     }
 
+    public long getLastApplied() {
+        return lastApplied;
+    }
+
+    public void setLastApplied(long lastApplied) {
+        this.lastApplied = lastApplied;
+    }
+
     @Override
     public String toString() {
-        return "User [id=" + id + ", currentTerm=" + term + ", votedFor=" + votedFor + "]";
+        return "RaftPersistenceInfo{" +
+                "id=" + id +
+                ", term=" + term +
+                ", lastApplied=" + lastApplied +
+                ", votedFor='" + votedFor + '\'' +
+                '}';
     }
 }
 
