@@ -17,7 +17,7 @@ public class User {
 
     @Exclude
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "firstName", nullable = false, length = 30)

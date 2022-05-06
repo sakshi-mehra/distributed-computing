@@ -12,8 +12,8 @@ public class Configs {
     public static final String GROUP_NAME2 = "230.0.0.1";
     public static final int NODE_COUNT = 5;
     public static final int MAJORITY_COUNT = Math.floorDiv(NODE_COUNT, 2) + 1;
-    public static final long HEARTBEAT_TIMEOUT = 5000;
-    public static final int ELECTION_TIMEOUT_MIN = 10000;
-    public static final int ELECTION_TIMEOUT_MAX = 25000;
+    public static final long HEARTBEAT_TIMEOUT = 500;
+    public static final int ELECTION_TIMEOUT_MIN = 650;
+    public static final int ELECTION_TIMEOUT_MAX = 1200;
 
 }
