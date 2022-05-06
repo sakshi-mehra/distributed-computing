@@ -152,7 +152,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         if (logs.size() != 0) {
             if (appendEntriesMessage.getPrevLogIndex() == logReplicationService.getLastLogIndex() &&
                 appendEntriesMessage.getPrevLogTerm() == logReplicationService.getLastLogTerm()) {
-                LOGGER.info("Need to write the logs into the database");
+                LOGGER.info("Need to write the logs into the database " + logs.get(0).toString());
                 logReplicationService.saveAll(logs);
             }
         }
@@ -350,7 +350,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
             }
             serverState.setLastApplied(serverState.getLastApplied() + 1);
             updatePersistenceInfo(serverState.getCurrentTerm(), serverState.getVotedFor(),
-                    serverState.getLastApplied() + 1);
+                    serverState.getLastApplied());
         }
     }
 
@@ -505,7 +505,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 String dest = "Node" + (i + 1);
                 sender.uniCast(dest, gson.toJson(appendEntriesMessage));
             } catch (IOException e) {
-                LOGGER.error("Failed to send Append RPC to Node" + (i +1));
+               // LOGGER.error("Failed to send Append RPC to Node" + (i +1));
             }
         }
     }
@@ -545,7 +545,6 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 LOGGER.error(e.getMessage(), e);
             }
         } else {
-            LOGGER.info("Sender Name:" + requestMessage.getSenderName() + "Json :" + gson.toJson(message));
             try {
                 sender2.uniCast(requestMessage.getSenderName(), gson.toJson(message));
             } catch (IOException e) {

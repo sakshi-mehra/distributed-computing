@@ -24,10 +24,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import java.util.*;
+import java.util.concurrent.*;
 
 
 @Controller
@@ -64,51 +62,65 @@ public class UserController {
         baseMessage.setKey(null);
         baseMessage.setValue(null);
 
-        for (int i = 0; i < Configs.NODE_COUNT; i++) {
+        int retryCount = 0;
+        int maxRetry = 5;
+
+        while (retryCount < maxRetry) {
+
+            for (int i = 0; i < Configs.NODE_COUNT; i++) {
+                try {
+                    sender.uniCast("Node" + (i + 1), gson.toJson(baseMessage));
+                    break;
+                } catch (IOException e) {
+                    //LOGGER.error(e.getMessage(), e);
+                }
+            }
+
+            String leaderNode = null;
             try {
-                sender.uniCast("Node" + (i + 1), gson.toJson(baseMessage));
-                LOGGER.info(gson.toJson(baseMessage));
-                LOGGER.info("********Message sent to Node" + (i + 1));
-                break;
+                final String[] leader_info = new String[1];
+                Receiver receiver = new Receiver(new ReceiveCallback() {
+                    @Override
+                    public void receive(String message) {
+                        leader_info[0] = message;
+                    }
+                }, Configs.GROUP_NAME2, Configs.PORT1, 1000);
+                receiver.receive();
+                receiver.stop();
+                BaseMessage leaderMsg = gson.fromJson(leader_info[0], BaseMessage.class);
+                leaderNode = leaderMsg.getValue();
+                LOGGER.error(leaderNode + " is the leader node");
+            } catch (IOException e) {
+                //e.printStackTrace();
+                //return "addFailed";
+            }
+
+            if (leaderNode == null) {
+                retryCount++;
+                continue;
+            }
+
+            baseMessage = new BaseMessage();
+            baseMessage.setRequestType(RequestType.STORE);
+            baseMessage.setValue(gson.toJson(user));
+            baseMessage.setKey("UM");
+
+            try {
+                sender.uniCast(leaderNode, gson.toJson(baseMessage));
             } catch (IOException e) {
                 LOGGER.error(e.getMessage(), e);
+                e.printStackTrace();
+                return "addFailed";
             }
+            break;
+
         }
 
-        String leaderNode;
-        try {
-            final String[] leader_info = new String[1];
-            Receiver receiver = new Receiver(new ReceiveCallback() {
-                @Override
-                public void receive(String message) {
-                    leader_info[0] = message;
-                }
-            }, Configs.GROUP_NAME2, Configs.PORT1);
-            receiver.receive();
-            receiver.stop();
-            LOGGER.info("Receiver" + leader_info[0]);
-            BaseMessage leaderMsg = gson.fromJson(leader_info[0], BaseMessage.class);
-            leaderNode = leaderMsg.getValue();
-            LOGGER.info(leaderNode + "is the leader node");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "addFailed";
-        }
 
-        LOGGER.info("Sending store info to the leader");
 
-        baseMessage = new BaseMessage();
-        baseMessage.setRequestType(RequestType.STORE);
-        baseMessage.setValue(gson.toJson(user));
-        baseMessage.setKey("UM");
 
-        try {
-            sender.uniCast(leaderNode, gson.toJson(baseMessage));
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-            e.printStackTrace();
-            return "addFailed";
-        }
+
+
 
         return "addSuccess";
     }

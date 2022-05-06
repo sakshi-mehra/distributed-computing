@@ -22,6 +22,14 @@ public class Receiver {
     private byte[] buf = new byte[Configs.MSG_BUFFER_LENGTH];
     private final ReceiveCallback receiveCallback;
 
+    public Receiver(ReceiveCallback receiveCallback, String host, int port, int timeOut) throws IOException {
+        socket = new MulticastSocket(port);
+        group = InetAddress.getByName(host);
+        socket.joinGroup(group);
+        socket.setSoTimeout(timeOut);
+        this.receiveCallback = receiveCallback;
+    }
+
     public Receiver(ReceiveCallback receiveCallback, String host, int port) throws IOException {
         socket = new MulticastSocket(port);
         group = InetAddress.getByName(host);
