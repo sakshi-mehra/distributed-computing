@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -65,8 +66,8 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         Task msgReceiverTask = new MessageReceiverTask(messageQueue);
         msgProcessorTaskManager = new TaskManger(msgProcessorTask, "MsgProcessorTask");
         receiverTaskManager = new TaskManger(msgReceiverTask, "MsgReceiverTask");
-        electionTimer = new Timer();
-        heartbeatTimer = new Timer();
+        electionTimer = new Timer("Election Timer 1");
+        heartbeatTimer = new Timer("Heartbeat timer");
 
         serverState = new ServerState(Utils.getHostName(), Configs.NODE_COUNT);
         raftContext = new RaftContext(this, messageQueue, msgProcessorTaskManager,
@@ -83,7 +84,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         try {
             electionTimer.schedule(electionTask, electionTask.getTimeout());
         } catch (IllegalStateException e) {
-            electionTimer = new Timer();
+            electionTimer = new Timer("Election timer 2");
             electionTimer.schedule(electionTask, electionTask.getTimeout());
         }
 
@@ -91,7 +92,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 electionTimeout));
     }
 
-    public void resetElectionTimer() {
+    public synchronized void resetElectionTimer() {
         LOGGER.info(String.format("Resetting election timeout by %s set for %d ms", serverState.getServerName(),
                 electionTask.getTimeout()));
         synchronized (lock) {
@@ -126,8 +127,10 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
         // Check whose log is up-to-date
         if (myLastLogTerm == requestLastLogTerm && requestLastLogIndex < myLastLogIndex) {
+            LOGGER.info("Logger1 not up to date");
             return;
         } else if (myLastLogTerm > requestLastLogTerm) {
+            LOGGER.info("Logger2 not up to date" + myLastLogTerm + " " + requestLastLogTerm);
             return;
         }
 
@@ -153,26 +156,46 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
     @Override
     public synchronized void onAppendEntriesReceived(AppendEntriesMessage appendEntriesMessage) {
-        String entries = appendEntriesMessage.getEntries();
-
-        //LOGGER.info("onAppendRPCReceived : " + gson.toJson(appendEntriesMessage, AppendEntriesMessage.class));
-        List<Log> logs = gson.fromJson(entries,  new TypeToken<List<Log>>(){}.getType());
-        //LOGGER.info(logs.toString());
-
-        long requestTerm = appendEntriesMessage.getTerm();
         String senderName = appendEntriesMessage.getSenderName();
-
-        LOGGER.info(String.format("Append RPC obtained from %s for term %s and my term %d and state : %s", senderName,
-                requestTerm, serverState.getCurrentTerm(), serverState.getNodeState()));
-
+        long requestTerm = appendEntriesMessage.getTerm();
         // Ignore self heartbeat
         if (senderName.equals(serverState.getServerName()))
             return;
 
+        // Respond false if current term is greater than request term
+        if (serverState.getCurrentTerm() > requestTerm) {
+            sendAppendEntriesResponseMessage(senderName, false);
+            return;
+        }
+
+        if (appendEntriesMessage.getPrevLogIndex() > logReplicationService.getLastLogIndex()) {
+            sendAppendEntriesResponseMessage(senderName, false);
+            return;
+        }
+
+        // If the term does not match for leader's previous log index and our previous log index
+        if (appendEntriesMessage.getPrevLogTerm() !=
+                logReplicationService.getLogTermByIndex(appendEntriesMessage.getPrevLogIndex())) {
+            serverState.setCurrentTerm(requestTerm);
+            sendAppendEntriesResponseMessage(senderName, false);
+            return;
+        }
+
+        String entries = appendEntriesMessage.getEntries();
+
+        List<Log> logs = gson.fromJson(entries,  new TypeToken<List<Log>>(){}.getType());
+
+        LOGGER.info(String.format("Append RPC obtained from %s for term %s and my term %d and state : %s, " +
+                        "commit Index : %d, Last Log index : %d",
+                senderName,
+                requestTerm, serverState.getCurrentTerm(), serverState.getNodeState(), serverState.getCommitIndex()
+                        , logReplicationService.getLastLogIndex())
+                );
+
         if (serverState.getNodeState() == NodeState.FOLLOWER) {
             resetElectionTimer();
             serverState.setLeaderNode(appendEntriesMessage.getSenderName());
-            //checkAndAppendLogs(logs, appendEntriesMessage);
+            checkAndAppendLogs(logs, appendEntriesMessage);
         } else if (serverState.getNodeState() == NodeState.CANDIDATE) {
 
             // Received a heart beat from leader and his term is at least my term then withdraw
@@ -180,7 +203,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 serverState.setNodeState(NodeState.FOLLOWER);
                 serverState.setLeaderNode(appendEntriesMessage.getSenderName());
                 resetElectionTimer();
-                //checkAndAppendLogs(logs, appendEntriesMessage);
+                checkAndAppendLogs(logs, appendEntriesMessage);
             }
         } else {
             // If leader
@@ -190,12 +213,16 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 convertToFollower();
             }
         }
+
+        serverState.setCommitIndex(Math.min(appendEntriesMessage.getLeaderCommit(), logReplicationService.getLastLogIndex()));
+        applyLogToStateMachine();
+        sendAppendEntriesResponseMessage(senderName, true);
     }
 
     @Override
     public void sendHeartbeat() {
         LOGGER.info(String.format("Send Heartbeat : %s ", serverState.getServerName()));
-        sendHeartbeatRPC();
+        sendAppendEntriesMessage();
         synchronized (lock) {
             heartbeatTask = new HeartbeatTask(this);
             heartbeatTimer.schedule(heartbeatTask, Configs.HEARTBEAT_TIMEOUT);
@@ -243,7 +270,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
         if (serverState.getVoteCount() >= Configs.MAJORITY_COUNT) {
             serverState.setNodeState(NodeState.LEADER);
-            serverState.setLeaderNode(senderName);
+            serverState.setLeaderNode(serverState.getServerName());
             LOGGER.info(String.format("I(%s) became Leader. Vote count : %d, Current Term : %d",
                     serverState.getServerName(), serverState.getVoteCount(), serverState.getCurrentTerm()));
 
@@ -251,6 +278,11 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
             LOGGER.info(String.format("Stopping election timer since %s became leader", serverState.getServerName()));
             electionTimer.cancel();
             sendHeartbeat();
+            for (int i = 0; i < Configs.NODE_COUNT; i++) {
+                serverState.setNextIndex(i, logReplicationService.getLastLogIndex() + 1);
+                serverState.setMatchIndex(i, 0L);
+            }
+
         }
     }
 
@@ -268,20 +300,45 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     public void onAppendEntriesResponseReceived(AppendEntriesResponse appendEntriesResponse) {
 
         String senderName = appendEntriesResponse.getSenderName();
+        long responseTerm = appendEntriesResponse.getTerm();
+        if (responseTerm > serverState.getCurrentTerm()) {
+            serverState.setCurrentTerm(responseTerm);
+            convertToFollower();
+            updatePersistenceInfo(responseTerm, null);
+            return;
+        }
+
         Integer senderId = Integer.parseInt(String.valueOf(senderName.charAt(senderName.length() - 1))) - 1;
 
         if (!appendEntriesResponse.isSuccess()) {
             serverState.decrementNextIndex(senderId);
+            assert serverState.getNextIndex()[senderId] != 0;
         } else {
-            serverState.incrementNextIndex(senderId);
-            serverState.incrementMatchIndex(senderId);
+            serverState.setMatchIndex(senderId, appendEntriesResponse.getMatchIndex());
+            serverState.setNextIndex(senderId, serverState.getMatchIndex()[senderId] + 1);
+            for (Long i = logReplicationService.getLastLogIndex(); i > serverState.getCommitIndex(); i--) {
+                int count = 0;
+                for (int j = 0; j < Configs.NODE_COUNT; j++) {
+                    if ((serverState.getMatchIndex()[j]).equals(i)) {
+                        count++;
+                    }
+                }
+
+                if (count >= Configs.MAJORITY_COUNT) {
+                    serverState.setCommitIndex(i);
+                    break;
+                }
+            }
         }
     }
 
-    public void applyLogToStateMachine(Message message) {
+    public void applyLogToStateMachine() {
         if (serverState.getCommitIndex() > serverState.getLastApplied()) {
             // execute apply
             //log[lastApplied] to state machine
+            LOGGER.info("**********Applied to state machine**************" + serverState.getLastApplied());
+
+            serverState.setLastApplied(serverState.getCommitIndex());
         }
     }
 
@@ -316,6 +373,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         for (int i = 0; i < Configs.NODE_COUNT; i++) {
             serverState.setNextIndex(i, logReplicationService.getLastLogIndex() + 1);
             serverState.setMatchIndex(i, 0L);
+            assert serverState.getNextIndex()[i] != 0;
         }
 
         receiverTaskManager.execute();
@@ -356,6 +414,8 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 onAppendEntriesReceived((AppendEntriesMessage) message);
                 break;
             case APPEND_RPC_RESPONSE:
+                if (checkForDowngrade(message))
+                    return;
                 onAppendEntriesResponseReceived((AppendEntriesResponse) message);
             case VOTE_ACK:
                 if (checkForDowngrade(message))
@@ -370,7 +430,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         }
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         receiverTaskManager.cancel();
         msgProcessorTaskManager.cancel();
 
@@ -382,18 +442,6 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
         electionTimer.cancel();
         heartbeatTimer.cancel();
-    }
-
-    public void sendHeartbeatRPC() {
-        BaseMessage message = new BaseMessage();
-        message.setRequestType(RequestType.APPEND_RPC);
-        message.setSenderName(serverState.getServerName());
-        message.setTerm(serverState.getCurrentTerm());
-        try {
-            sender.multicast(gson.toJson(message));
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-        }
     }
 
     public void sendVoteResponseACK(String candidateName) {
@@ -411,6 +459,10 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     public void sendAppendEntriesMessage() {
 
         for (int i = 0; i < Configs.NODE_COUNT; i++) {
+
+            if (i == serverState.getServerId())
+                continue;
+
             Long nextIndex = serverState.getNextIndex(i);
             AppendEntriesMessage appendEntriesMessage = new AppendEntriesMessage();
             appendEntriesMessage.setSenderName(serverState.getServerName());
@@ -423,6 +475,12 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
 
             List<Log> logs = logReplicationService.getAllLogsGreaterThanEqual(nextIndex);
 
+            if (logs.size() > 1) {
+                logs.subList(1, logs.size()).clear();
+            }
+
+            LOGGER.info("Append:" + logs.toString());
+
             appendEntriesMessage.setEntries(
                     gson.toJsonTree(logs, new TypeToken<List<Log>>(){}.getType()).getAsJsonArray().toString());
 
@@ -430,7 +488,7 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
                 String dest = "Node" + (i + 1);
                 sender.uniCast(dest, gson.toJson(appendEntriesMessage));
             } catch (IOException e) {
-                LOGGER.error(e.getMessage(), e);
+                LOGGER.error("Failed to send Append RPC to Node" + (i +1));
             }
         }
     }
@@ -441,6 +499,12 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
         appendEntriesResponse.setRequestType(RequestType.APPEND_RPC_RESPONSE);
         appendEntriesResponse.setSuccess(isSuccess);
         appendEntriesResponse.setTerm(serverState.getCurrentTerm());
+
+        if (isSuccess) {
+            appendEntriesResponse.setMatchIndex(logReplicationService.getLastLogIndex());
+        } else {
+            appendEntriesResponse.setMatchIndex(0L);
+        }
 
         try {
             sender.uniCast(destServerName, gson.toJson(appendEntriesResponse));
@@ -465,10 +529,12 @@ public class RaftImpl implements RAFT, MessageProcessor, ElectionCallback, Heart
     }
 
     public void sendVoteRequestRPC() {
-        BaseMessage message = new BaseMessage();
+        RequestVoteMessage message = new RequestVoteMessage();
         message.setSenderName(serverState.getServerName());
         message.setTerm(serverState.getCurrentTerm());
         message.setRequestType(RequestType.VOTE_REQUEST);
+        message.setLastLogIndex(logReplicationService.getLastLogIndex());
+        message.setLastLogTerm(logReplicationService.getLastLogTerm());
 
         try {
             sender.multicast(gson.toJson(message));

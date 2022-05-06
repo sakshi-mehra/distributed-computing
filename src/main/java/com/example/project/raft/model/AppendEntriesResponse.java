@@ -11,4 +11,6 @@ import lombok.Setter;
 public class AppendEntriesResponse extends BaseMessage {
 
     boolean success;
+
+    Long matchIndex;
 }

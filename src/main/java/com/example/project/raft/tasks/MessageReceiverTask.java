@@ -3,6 +3,7 @@ package com.example.project.raft.tasks;
 import com.example.project.raft.communication.Message;
 import com.example.project.raft.communication.Receiver;
 import com.example.project.raft.model.AppendEntriesMessage;
+import com.example.project.raft.model.AppendEntriesResponse;
 import com.example.project.raft.model.BaseMessage;
 import com.example.project.raft.model.RequestVoteMessage;
 import com.google.gson.Gson;
@@ -66,6 +67,10 @@ public class MessageReceiverTask implements Task, ReceiveCallback {
                 case APPEND_RPC:
                     msg = gson.fromJson(message, AppendEntriesMessage.class);
                     break;
+                case APPEND_RPC_RESPONSE:
+                    msg = gson.fromJson(message, AppendEntriesResponse.class);
+                    break;
+
             }
 
             messageQueue.add(msg);

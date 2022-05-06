@@ -13,6 +13,7 @@ import lombok.Setter;
 public class ServerState {
 
     private final String serverName;
+    private final int serverId;
     private NodeState nodeState;
     private long currentTerm = 0;
     private String votedFor = null;
@@ -32,8 +33,10 @@ public class ServerState {
     public ServerState(String serverName, int nodeCount) {
         this.serverName = serverName;
 
-        nextIndex = new Long[Configs.NODE_COUNT];
-        matchIndex = new Long[Configs.NODE_COUNT];
+        serverId = Integer.parseInt(String.valueOf(serverName.charAt(serverName.length() - 1))) - 1;
+
+        nextIndex = new Long[nodeCount];
+        matchIndex = new Long[nodeCount];
 
         this.nodeState = NodeState.FOLLOWER;
         this.voteCount = 0;
